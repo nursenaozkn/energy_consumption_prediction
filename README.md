@@ -12,14 +12,18 @@ modelleme yaklaşımı sunar.
 
 Tahmin probleminin doğası, sorulan tarihin ne kadar uzakta olduğuna göre değişir. Yakın
 gelecek için son gözlemler güçlü bilgi taşır; uzak gelecek içinse yalnızca mevsimsel
-örüntüye dayanılabilir. Bu nedenle proje iki ayrı modülden oluşur:
+örüntüye dayanılabilir. Bu nedenle proje, biri diğerinin yerine geçmeyen iki tamamlayıcı
+tahmin modelinden ve bunları tek arayüzde birleştiren bir yönlendirici katmanından oluşur:
 
 | Modül | Yaklaşım | Uygun kullanım |
 |---|---|---|
 | `energy_agent_model.py` | Takvim tabanlı (iklimsel) | Herhangi bir uzak gelecek tarihi |
 | `lag_forecast.py` | Lag tabanlı (özyinelemeli) | Kısa vadeli (yakın gelecek) tahmin |
+| `smart_forecast.py` | Akıllı yönlendirici | İki modeli sarar, en iyisini otomatik seçer |
 
-İki modül birbirini tamamlar; biri diğerinin yerine geçmez.
+İki model birbirini tamamlar; biri diğerinin yerine geçmez. Yönlendirici
+(`smart_forecast.py`) yeni bir model değildir; her tahmin isteğinde seviye, hedef ve
+tahmin ufkuna göre uygun modeli otomatik seçer ve sonucu tek bir tabloda birleştirir.
 
 ---
 
@@ -30,6 +34,7 @@ gelecek için son gözlemler güçlü bilgi taşır; uzak gelecek içinse yalnı
 ├── fetch_real_data.py      # EPİAŞ Şeffaflık Platformu'ndan gerçek veri indirir
 ├── energy_agent_model.py   # Takvim tabanlı model + tahmin ajanı (EnergyForecastAgent)
 ├── lag_forecast.py         # Lag tabanlı kısa-vadeli model (LagForecaster)
+├── smart_forecast.py       # Akıllı yönlendirici (SmartForecaster) — iki modeli birleştirir
 ├── train_models.py         # Takvim modelini eğitme betiği
 ├── predict.py              # Örnek tahmin betiği
 ├── ask_agent.py            # Etkileşimli (kullanıcıdan tarih alan) tahmin
@@ -131,6 +136,24 @@ enerji için ~0.84, yenilenebilir pay için ~0.91). Lag modeli bu bilgiyi kullan
 vadede belirgin biçimde daha isabetlidir. Uzak horizonda lag değerleri tahminden
 beslendiği için model doğal olarak mevsimsel ortalamaya yakınsar.
 
+### 3. Akıllı yönlendirici — `smart_forecast.py`
+
+Bu modül yeni bir model değil, yukarıdaki iki modelin önüne geçen bir **karar ve
+birleştirme katmanıdır**. `SmartForecaster` sınıfı her iki modeli birden yükler ve her
+tahmin isteğinde, her hedef için ayrı ayrı en uygun modeli seçer:
+
+- **Günlük** (her iki hedef) → lag modeli.
+- **Haftalık/aylık tüketim** → takvim modeli (seri neredeyse saf mevsimsel).
+- **Haftalık/aylık yenilenebilir pay** → lag modeli.
+- **Ufuk ~1 yılı aşarsa** (her seviye ve hedef) → takvim modeli. Bu mesafede lag,
+  özyinelemeli olarak mevsimsel ortalamaya yakınsadığından üstünlüğünü yitirir.
+
+Haftalık ve aylık isteklerde tüketim ile yenilenebilir pay farklı modellerden gelir;
+yönlendirici ikisini tek bir tabloda birleştirir ve hangi sayının hangi modelden geldiğini
+çıktıda belirtir. Yönlendirici tahminleri *daha doğru* yapmaz — doğru modeli elle
+seçseydiniz alacağınız sonuçların aynısını üretir. Kazanç, doğru seçimin garanti edilmesi
+ve kullanım kolaylığıdır: kullanıcının hangi modeli çağıracağını bilmesi gerekmez.
+
 ---
 
 ## Modeller
@@ -195,6 +218,34 @@ Eğitilen modeller `models/` klasörüne, metrikler ise `models/model_metrics.cs
 `models/lag_model_metrics.csv` dosyalarına kaydedilir.
 
 ### 3. Tahmin
+
+**Akıllı yönlendirici (önerilen) — en iyi modeli otomatik seçer:**
+
+`SmartForecaster`, verilen tarihe/döneme göre uygun modeli kendisi seçer; hangi modelin
+kullanılacağını bilmeniz gerekmez.
+
+```python
+from smart_forecast import SmartForecaster
+
+sf = SmartForecaster(model_dir="models")
+
+# Tek bir gün — tahmin sonucu ve hangi modelin neden seçildiği
+gunluk = sf.predict_daily("2025-03-12")
+
+# Haftalık / aylık dönem — her hedef en iyi modelden, tek tabloda
+haftalik = sf.predict_period("2025-03-01", "2025-04-30", level="weekly")
+aylik = sf.predict_period("2025-03-01", "2025-12-31", level="monthly")
+```
+
+Komut satırından:
+
+```bash
+python smart_forecast.py --date 2025-03-12
+python smart_forecast.py --start 2025-03-01 --end 2025-04-15 --level weekly
+python smart_forecast.py    # demo: birkaç örnek
+```
+
+Tek bir modeli doğrudan kullanmak isterseniz aşağıdaki iki seçenek de kullanılabilir.
 
 **Takvim tabanlı model — belirli bir tarih veya dönem:**
 
@@ -279,6 +330,9 @@ tahminleriyle ilerlemedir (en kötü durum). Gerçek kullanım bu ikisinin aras�
 
 Haftalık ve aylık tüketim serileri neredeyse saf mevsimsel olduğundan, bu seviyelerde
 takvim modeli (SeasonalTrend) lag modelinden daha isabetlidir.
+
+Bu tabloyu elle uygulamak zorunda değilsiniz: `smart_forecast.py` (akıllı yönlendirici)
+her tahmin isteğinde bu seçimi otomatik yapar. Bkz. *Yöntem → 3. Akıllı yönlendirici*.
 
 ---
 
