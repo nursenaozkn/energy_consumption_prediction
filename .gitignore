@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+
+# Sanal ortamlar
+venv/
+.venv/
+env/
+
+# Ortam değişkenleri / kimlik bilgileri (EPİAŞ parolası buraya yazılırsa repoya gitmez)
+.env
+
+# EPİAŞ veri çekme önbelleği (yeniden üretilebilir)
+.epias_cache/
+
+# Eğitim / test çıktı logları
+training_output.txt
+test_output.txt
+*.log
+
+# Jupyter
+.ipynb_checkpoints/
+
+# İşletim sistemi
+.DS_Store
+Thumbs.db
