@@ -6,6 +6,23 @@ bir makine öğrenmesi sistemidir. Modeller, EPİAŞ Şeffaflık Platformu'ndan 
 ölçüm verileriyle eğitilir. Sistem, farklı tahmin ihtiyaçları için iki tamamlayıcı
 modelleme yaklaşımı sunar.
 
+## Amaç
+
+Türkiye elektrik şebekesinde ilerideki tüketimi ve yenilenebilir kaynak payını günlük,
+haftalık ve aylık çözünürlükte tahmin ederek planlama, raporlama ve araştırma çalışmalarına
+isabetli veri sağlamak. Sistem, tahmin ufkuna göre lag tabanlı (yakın gelecek) ve takvim
+tabanlı (uzak gelecek) yaklaşımları birlikte değerlendirir; her seviye ve hedef için en
+uygun modeli otomatik seçtiğinden kullanıcının iç işleyişi bilmesine gerek kalmaz.
+
+## Örnek Çıktı
+
+Aşağıda son 180 günlük gerçek veri (mavi) ile akıllı yönlendiricinin sonraki 90 gün için
+otomatik seçtiği modelin tahmini (turuncu) gösterilmektedir. Üst panel günlük enerji
+tüketimini, alt panel yenilenebilir enerji payını verir; kesikli dikey çizgi son gerçek
+gözlem tarihini (tahmin başlangıcını) işaretler.
+
+![Son 180 gün gerçek veri ve sonraki 90 gün otomatik tahmin](images/forecast_example.png)
+
 ---
 
 ## Genel Bakış

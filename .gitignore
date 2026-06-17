@@ -27,3 +27,6 @@ test_output.txt
 # İşletim sistemi
 .DS_Store
 Thumbs.db
+
+# Claude Code worktree / oturum dosyaları
+.claude/
